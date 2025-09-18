@@ -19,7 +19,6 @@ static EGLSurface surface;
 static EGLContext context;
 
 static int blowup = 0;
-static int screenshot = 0;
 static int premult = 0;
 
 static void init_egl(int width, int height) {

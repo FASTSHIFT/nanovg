@@ -40,7 +40,6 @@ solution "nanovg"
 			 links { "brcmGLESv2", "brcmEGL", "m", "bcm_host" }
 			 linkoptions { "-L/opt/vc/lib" }
 			 includedirs { "/opt/vc/include" }
-			 defines { "NANOVG_GLES2_IMPLEMENTATION" }
 
 		configuration { "windows" }
 			 links { "glfw3", "gdi32", "winmm", "user32", "GLEW", "glu32","opengl32", "kernel32" }
@@ -238,7 +237,6 @@ solution "nanovg"
 		includedirs { "src", "example", "/opt/vc/include" }
 		targetdir("build")
 		links { "nanovg" }
-		defines { "NANOVG_GLES2_IMPLEMENTATION" }
 
 		configuration { "linux" }
 			 links { "brcmGLESv2", "brcmEGL", "m", "bcm_host" }
