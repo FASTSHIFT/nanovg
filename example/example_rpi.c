@@ -155,6 +155,11 @@ int main()
         renderGraph(vg, 5, 5, &fps);
         nvgEndFrame(vg);
 
+        GLenum gl_err = glGetError();
+        if (gl_err != GL_NO_ERROR) {
+            printf("GLES error after nvgEndFrame: 0x%X\n", gl_err);
+        }
+
         eglSwapBuffers(display, surface);
     }
 
