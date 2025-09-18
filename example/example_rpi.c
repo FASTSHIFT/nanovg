@@ -1,10 +1,17 @@
 #include <stdio.h>
 #include <bcm_host.h>
+#include <GLES/gl.h>
+#include <GLES2/gl2.h>
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
+
+// #define GLFW_INCLUDE_ES2
+// #define GLFW_INCLUDE_GLEXT
 #include "nanovg.h"
+
 #define NANOVG_GLES2_IMPLEMENTATION
 #include "nanovg_gl.h"
+#include "nanovg_gl_utils.h"
 #include "demo.h"
 #include "perf.h"
 
@@ -71,7 +78,7 @@ int main() {
     NVGcontext* vg = NULL;
     PerfGraph fps;
     double prevt = 0;
-    int width = 1000, height = 600;
+    int width = 480, height = 480;
 
     init_egl(width, height);
     initGraph(&fps, GRAPH_RENDER_FPS, "Frame Time");

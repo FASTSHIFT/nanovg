@@ -4,6 +4,10 @@
 #include <math.h>
 #ifdef NANOVG_GLEW
 #  include <GL/glew.h>
+#else
+#  define glBeginQuery(...)
+#  define glEndQuery(...)
+#  define glGetQueryObjectiv(...)
 #endif
 #include <GLFW/glfw3.h>
 #include "nanovg.h"
