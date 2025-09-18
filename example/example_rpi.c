@@ -4,9 +4,6 @@
 #include <GLES2/gl2.h>
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
-
-// #define GLFW_INCLUDE_ES2
-// #define GLFW_INCLUDE_GLEXT
 #include "nanovg.h"
 
 #define NANOVG_GLES2_IMPLEMENTATION
@@ -15,15 +12,17 @@
 #include "demo.h"
 #include "perf.h"
 
+#include <time.h>
+
 static EGLDisplay display;
 static EGLSurface surface;
 static EGLContext context;
 
-int blowup = 0;
-int screenshot = 0;
-int premult = 0;
+static int blowup = 0;
+static int screenshot = 0;
+static int premult = 0;
 
-void init_egl(int width, int height) {
+static void init_egl(int width, int height) {
     static EGL_DISPMANX_WINDOW_T nativewindow;
     
     bcm_host_init();
@@ -73,6 +72,12 @@ void init_egl(int width, int height) {
     eglMakeCurrent(display, surface, surface, context);
 }
 
+static float getTime(void) {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (float)ts.tv_sec + (float)ts.tv_nsec / 1000000000.0f;
+}
+
 int main() {
     DemoData data;
     NVGcontext* vg = NULL;
@@ -92,13 +97,13 @@ int main() {
     if (loadDemoData(vg, &data) == -1)
         return -1;
 
-    prevt = 0;
+    prevt = getTime();
 
     while (1) {
         double mx = width/2, my = height/2, t, dt;
         float pxRatio = 1.0f;
 
-        t = 0; // TODO: Implement timing
+        t = getTime();
         dt = t - prevt;
         prevt = t;
         updateGraph(&fps, dt);
