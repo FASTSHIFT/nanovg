@@ -1,0 +1,125 @@
+#include <stdio.h>
+#include <bcm_host.h>
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+#include "nanovg.h"
+#define NANOVG_GLES2_IMPLEMENTATION
+#include "nanovg_gl.h"
+#include "demo.h"
+#include "perf.h"
+
+static EGLDisplay display;
+static EGLSurface surface;
+static EGLContext context;
+
+int blowup = 0;
+int screenshot = 0;
+int premult = 0;
+
+void init_egl(int width, int height) {
+    static EGL_DISPMANX_WINDOW_T nativewindow;
+    
+    bcm_host_init();
+    
+    display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+    eglInitialize(display, NULL, NULL);
+    
+    EGLint attribs[] = {
+        EGL_RED_SIZE, 8,
+        EGL_GREEN_SIZE, 8,
+        EGL_BLUE_SIZE, 8,
+        EGL_ALPHA_SIZE, 8,
+        EGL_DEPTH_SIZE, 16,
+        EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
+        EGL_NONE
+    };
+    
+    EGLConfig config;
+    EGLint num_configs;
+    eglChooseConfig(display, attribs, &config, 1, &num_configs);
+    
+    EGLint context_attribs[] = {
+        EGL_CONTEXT_CLIENT_VERSION, 2,
+        EGL_NONE
+    };
+    
+    context = eglCreateContext(display, config, EGL_NO_CONTEXT, context_attribs);
+    
+    // Create dispmanx window
+    VC_RECT_T dst_rect = {0, 0, width, height};
+    VC_RECT_T src_rect = {0, 0, width << 16, height << 16};
+    
+    DISPMANX_DISPLAY_HANDLE_T dispman_display = vc_dispmanx_display_open(0);
+    DISPMANX_UPDATE_HANDLE_T dispman_update = vc_dispmanx_update_start(0);
+    DISPMANX_ELEMENT_HANDLE_T dispman_element = vc_dispmanx_element_add(
+        dispman_update, dispman_display,
+        0, &dst_rect, 0,
+        &src_rect, DISPMANX_PROTECTION_NONE,
+        0, 0, DISPMANX_NO_ROTATE);
+    
+    nativewindow.element = dispman_element;
+    nativewindow.width = width;
+    nativewindow.height = height;
+    vc_dispmanx_update_submit_sync(dispman_update);
+    
+    surface = eglCreateWindowSurface(display, config, &nativewindow, NULL);
+    eglMakeCurrent(display, surface, surface, context);
+}
+
+int main() {
+    DemoData data;
+    NVGcontext* vg = NULL;
+    PerfGraph fps;
+    double prevt = 0;
+    int width = 1000, height = 600;
+
+    init_egl(width, height);
+    initGraph(&fps, GRAPH_RENDER_FPS, "Frame Time");
+
+    vg = nvgCreateGLES2(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
+    if (vg == NULL) {
+        printf("Could not init nanovg.\n");
+        return -1;
+    }
+
+    if (loadDemoData(vg, &data) == -1)
+        return -1;
+
+    prevt = 0;
+
+    while (1) {
+        double mx = width/2, my = height/2, t, dt;
+        float pxRatio = 1.0f;
+
+        t = 0; // TODO: Implement timing
+        dt = t - prevt;
+        prevt = t;
+        updateGraph(&fps, dt);
+
+        // Update and render
+        glViewport(0, 0, width, height);
+        if (premult)
+            glClearColor(0,0,0,0);
+        else
+            glClearColor(0.3f, 0.3f, 0.32f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
+
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glEnable(GL_CULL_FACE);
+        glDisable(GL_DEPTH_TEST);
+
+        nvgBeginFrame(vg, width, height, pxRatio);
+        renderDemo(vg, mx, my, width, height, t, blowup, &data);
+        renderGraph(vg, 5,5, &fps);
+        nvgEndFrame(vg);
+
+        eglSwapBuffers(display, surface);
+    }
+
+    freeDemoData(vg, &data);
+    nvgDeleteGLES2(vg);
+    eglTerminate(display);
+    bcm_host_deinit();
+    return 0;
+}

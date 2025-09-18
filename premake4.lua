@@ -35,6 +35,12 @@ solution "nanovg"
 			 linkoptions { "`pkg-config --libs glfw3`" }
 			 links { "GL", "GLU", "m", "GLEW" }
 			 defines { "NANOVG_GLEW" }
+		
+		configuration { "raspberrypi" }
+			 links { "brcmGLESv2", "brcmEGL", "m", "bcm_host" }
+			 linkoptions { "-L/opt/vc/lib" }
+			 includedirs { "/opt/vc/include" }
+			 defines { "NANOVG_GLES2_IMPLEMENTATION" }
 
 		configuration { "windows" }
 			 links { "glfw3", "gdi32", "winmm", "user32", "GLEW", "glu32","opengl32", "kernel32" }
@@ -216,6 +222,27 @@ solution "nanovg"
 		configuration { "macosx" }
 			links { "glfw3" }
 			linkoptions { "-framework OpenGL", "-framework Cocoa", "-framework IOKit", "-framework CoreVideo", "-framework Carbon" }
+
+		configuration "Debug"
+			defines { "DEBUG" }
+			flags { "Symbols", "ExtraWarnings"}
+
+		configuration "Release"
+			defines { "NDEBUG" }
+			flags { "Optimize", "ExtraWarnings"}
+
+	project "example_rpi"
+		kind "ConsoleApp"
+		language "C"
+		files { "example/example_rpi.c", "example/demo.c", "example/perf.c" }
+		includedirs { "src", "example", "/opt/vc/include" }
+		targetdir("build")
+		links { "nanovg" }
+		defines { "NANOVG_GLES2_IMPLEMENTATION" }
+
+		configuration { "linux" }
+			 links { "brcmGLESv2", "brcmEGL", "m", "bcm_host" }
+			 linkoptions { "-L/opt/vc/lib" }
 
 		configuration "Debug"
 			defines { "DEBUG" }
